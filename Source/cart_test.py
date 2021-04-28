@@ -37,7 +37,7 @@ def evaluate_model(model, x_train, y_train, x_test, y_test):
     y_pred = model.predict(x_test)
     time_predict = time.time() - time0
     print('    CART prediction made in {:.1f}s'.format(time_predict))
-    #print('    Tree depth: {}\n'.format(model.get_depth()))
+    print('    Tree depth: {}\n'.format(model.get_depth()))
     
     print('    Classification report:')
     try:
@@ -45,8 +45,10 @@ def evaluate_model(model, x_train, y_train, x_test, y_test):
     except:
         print(classification_report(y_test, y_pred))
 
-# load rice dataset
-x, y = datasets.load_rice()
+# load dataset
+#x, y = datasets.load_rice()
+x, y = datasets.load_mammographic_mass()
+#x, y = datasets.load_csv(os.path.join('..', 'Data', 'heart.csv'))
 
 # split data into 75% train and 25% test
 X_train, X_test, y_train, y_test = train_test_split(x, y, stratify=y, test_size=0.25, random_state=42)
@@ -61,14 +63,14 @@ print('Test size: {}\n'.format(len(y_test)))
 
 
 # Sklearn CART
-print('Evaluate Scikit-Learn CART')
-model = sklearnTree.DecisionTreeClassifier()
-evaluate_model(model, X_train, y_train, X_test, y_test)
+#print('Evaluate Scikit-Learn CART')
+#model = sklearnTree.DecisionTreeClassifier()
+#evaluate_model(model, X_train, y_train, X_test, y_test)
 
 # Custom CART
 print('Evaluate custom CART')
 t0 = time.time()
-cart = CART(max_depth=10, verbose=0)
+cart = CART(max_depth=15, verbose=0)
 evaluate_model(cart, X_train, y_train, X_test, y_test)
 
 #print(cart.tree)
@@ -84,3 +86,6 @@ evaluate_model(cart, X_train, y_train, X_test, y_test)
 # features = [0, 1, 2, 3, 4]
 # n_features = 3
 # selected_features = random.sample(features, n_features)
+
+#x, y = datasets.load_lenses()
+#evaluate_model(cart, x, y, x, y)

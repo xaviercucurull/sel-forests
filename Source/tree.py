@@ -13,4 +13,25 @@ class Node:
         self.left = None
             
     def __str__(self):
-        return 'Tree - not implemented yet'
+        str = []
+        self._str_aux(self, s=str)
+        return '\n'.join(str)
+    
+    def _str_aux(self, node, depth=0, s=[]):
+        # If not a terminal node
+        if node.left:   
+            # If feature is categorical
+            if type(node.split_point) == set:
+                s.append('{}[{} ∈ {}]'.format(depth*' ', node.feature, node.split_point))
+            # If feature is numerical
+            else:
+                s.append('{}[{} < {:.3f}]'.format(depth*' ', node.feature, node.split_point))
+            
+            # Explore children
+            self._str_aux(node.left, depth+1, s)
+            self._str_aux(node.right, depth+1, s)
+            
+        # Terminal node (leaf)
+        else:
+            s.append('{}[{}]'.format(depth*' ', node.predicted_class))
+        

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from scipy.io import arff
 
-DATASETS_PATH = os.path.join('datasets', 'DATA')
+DATASETS_PATH = os.path.join('..', 'Data')
 
 def load_csv(filepath, delimiter=',', class_col='', dataset_name='', print_summary=False):
     """[summary]
