@@ -1,14 +1,27 @@
 """
 Implementation of CART decision tree algorithm.
+
 Author: Xavier Cucurull Salamero <xavier.cucurull@estudiantat.upc.edu>
 """
 import tree
 import pandas as pd
+import numpy as np
+import random
 from itertools import combinations
 
+random.seed(42)
+np.random.seed(42)
+
 class CART():
-    def __init__(self, max_depth=None, verbose=0):
-        self.max_depth = max_depth
+    """ CART tree classifier.
+    """
+    def __init__(self, max_depth=None, F=None, verbose=0):
+        if max_depth:
+            self.max_depth = max_depth
+        else:
+            self.max_depth = np.inf
+    
+        self.f = F
         self.verbose = verbose
         self.tree = None
     
@@ -19,12 +32,27 @@ class CART():
             x (DataFrame): training data features
             y (array-like): training data classification
         """
+        # If f is bigger than the number of features, set it to None and don' use it
+        if self.f is not None:
+            if self.f > len(x.columns):
+                self.f = None
+            
         self.x = x
         self.y = pd.Series(y)
         self.features = self.x.columns.tolist()
+        self.features_count = {f: 0 for f in self.features}
         self.tree = self._grow_tree(self.x.index.tolist())
+        self.feature_importances = np.array(list(self.features_count.values()))/sum(list(self.features_count.values()))
         
     def predict(self, x):
+        """ Use the tree classifier to predict the class of the given examples.
+
+        Args:
+            x (DataFrame): data features to predict
+
+        Returns:
+            list: predicted classes
+        """
         
         assert self.tree is not None, 'Model not trained, call self.fit(x, y) first!'
         pred = [self._predict(row) for i, row in x.iterrows()] 
@@ -101,9 +129,13 @@ class CART():
         split = []
         m = len(data_idx)
         
-        # Evaluate all features
-        # TODO: will need to change for random forests
-        for feature in self.features:
+        # Evaluate features (all features or a random subset of f features)
+        if self.f is not None:
+            selected_features = random.sample(self.features, self.f)
+        else:
+            selected_features = self.features
+            
+        for feature in selected_features:
             # If feature is numerical
             if 'int' in str(type(self.x[feature][0])) or 'float' in str(type(self.x[feature][0])):
                 sorted_indices = X.sort_values(feature).index.tolist()
@@ -194,7 +226,7 @@ class CART():
                     # Stop iterating if best_gini is 0
                     if best_gini == 0:
                         return best_gini, best_feature, best_sp, split
-                    
+                
         return best_gini, best_feature, best_sp, split
    
     def _grow_tree(self, data_idx, depth=0):
@@ -206,9 +238,8 @@ class CART():
         """
         if self.verbose > 2:
             print('[CART] Grow tree...')
+            
         # Find predicted class of current node (mode)
-        #TODO: check type and use [0] or [0][0]?
-        #predicted_class = self.y.loc[data_idx].mode()[0][0]
         predicted_class = self.y.loc[data_idx].mode()[0]
 
         # Node class counts
@@ -218,33 +249,32 @@ class CART():
         node = tree.Node(predicted_class=predicted_class, gini=self._gini_index(data_idx, class_counts))        
         
         # Split recursively until no more examples to cover or max_depth is reached
-        # TODO: check max_depth and if None
-        if self.max_depth is not None:
-            if depth < self.max_depth:
-                best_gini, best_feature, best_sp, split = self._find_best_split(data_idx)
+        if depth < self.max_depth:
+            best_gini, best_feature, best_sp, split = self._find_best_split(data_idx)
+            
+            # If a split has been found keep growing children
+            if best_feature is not None: 
+                self.features_count[best_feature] += 1
+                left_idx = split[0]
+                right_idx = split[1]
                 
-                # If a split has been found keep growing children
-                if best_feature is not None: 
-                    left_idx = split[0]
-                    right_idx = split[1]
-                    
-                    node.feature = best_feature
-                    node.split_point = best_sp
-                    
-                    # Debug information
-                    if self.verbose > 0:
-                        if type(best_sp) == set:
-                            print('[CART] Best split: {} ∈ {}'.format(best_feature, best_sp))
-                        else:
-                            print('[CART] Best split: {} <= {:.3f}'.format(best_feature, best_sp))  
-                        print('[CART] left: {} - right: {}'.format(len(left_idx), len(right_idx))) 
-                        print('[CART] class: {}'.format(predicted_class))
-                    
-                    # Grow children
-                    if self.verbose > 2:
-                        print('[CART] Grow children...')
-                    node.left = self._grow_tree(left_idx, depth + 1)
-                    node.right = self._grow_tree(right_idx, depth + 1)
+                node.feature = best_feature
+                node.split_point = best_sp
+                
+                # Debug information
+                if self.verbose > 0:
+                    if type(best_sp) == set:
+                        print('[CART] Best split: {} ∈ {}'.format(best_feature, best_sp))
+                    else:
+                        print('[CART] Best split: {} <= {:.3f}'.format(best_feature, best_sp))  
+                    print('[CART] left: {} - right: {}'.format(len(left_idx), len(right_idx))) 
+                    print('[CART] class: {}'.format(predicted_class))
+                
+                # Grow children
+                if self.verbose > 2:
+                    print('[CART] Grow children...')
+                node.left = self._grow_tree(left_idx, depth + 1)
+                node.right = self._grow_tree(right_idx, depth + 1)
                     
         return node
   
@@ -272,6 +302,7 @@ class CART():
     
     
     
+# TODO: remove    
 if __name__ == '__main__':
     import sys
     import os

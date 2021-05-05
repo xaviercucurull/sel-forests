@@ -1,5 +1,6 @@
 """
 Basic implementation of a binary tree.
+
 Author: Xavier Cucurull Salamero <xavier.cucurull@estudiantat.upc.edu>
 """
 
