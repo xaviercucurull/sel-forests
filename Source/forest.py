@@ -29,19 +29,25 @@ class DecisionForest():
         self.verbose = verbose
         
         # TODO: feature importances
-        
+
     def _get_subspace(self):
         """ Get a random feature subspace.
 
         Returns: x, y of the subsampled dataset
         """
-        
         # Select f random features
         features = self.x.columns.tolist()
-        selected_features = random.sample(features, self.n_features)
-        x = self.x[selected_features]
+        if self.n_features == 'Runif(1/M)':
+            M = len(self.x.columns)
+            f =  np.random.randint(1, M+1)
+        else:
+            f = self.n_features
+            
+        selected_features = random.sample(features, f)
         
+        x = self.x[selected_features]
         y = self.y
+        
         # Bootstrap sample
         # x2 = pd.DataFrame(x2.values[indices], columns=x2.columns)
         # y2 = pd.Series(self.y).values[indices]
@@ -63,9 +69,19 @@ class DecisionForest():
         for i in range(self.n_trees):
             tree = CART()
             sample_x, sample_y = self._get_subspace()
+            
+            # Debug information
+            if self.verbose > 0:
+                print('[DecisionForest] Fitting tree {} with features {}...'.format(i, sample_x.columns.tolist()))
+                
             tree.fit(sample_x, sample_y)
             self.classifiers.append(tree)
-    
+            
+        # Feature importances
+        features_count = pd.DataFrame([c.features_count for c in self.classifiers])
+        self.feature_importances = features_count.sum()/features_count.sum().sum()
+        self.feature_importances.sort_values(ascending=False, inplace=True)
+
     def predict(self, x):
         """ Use the ensemble of classifier to predict the class of the given examples.
 
@@ -109,7 +125,6 @@ class RandomForest():
         x = pd.DataFrame(self.x.values[indices], columns=self.x.columns)
         y = pd.Series(self.y).values[indices]
         
-        
         return x, y        
         
     def fit(self, x, y):
@@ -125,11 +140,22 @@ class RandomForest():
         # Create n_trees number of classifiers
         self.classifiers = []
         for i in range(self.n_trees):
+            # Debug information
+            if self.verbose > 0:
+                print('[DecisionForest] Fitting tree {}...'.format(i))
+                
             tree = CART(F=self.n_features)
             sample_x, sample_y = self._bootstrap_sample()
             tree.fit(sample_x, sample_y)
             self.classifiers.append(tree)
-    
+            
+        self.features_count = pd.DataFrame([c.features_count for c in self.classifiers])
+        
+        # Feature importances
+        features_count = pd.DataFrame([c.features_count for c in self.classifiers])
+        self.feature_importances = features_count.sum()/features_count.sum().sum()
+        self.feature_importances.sort_values(ascending=False, inplace=True)
+        
     def predict(self, x):
         """ Use the ensemble of classifier to predict the class of the given examples.
 
