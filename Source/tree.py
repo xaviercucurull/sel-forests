@@ -5,6 +5,8 @@ Author: Xavier Cucurull Salamero <xavier.cucurull@estudiantat.upc.edu>
 """
 
 class Node:
+    """ Implementation of a binary tree to use with CART.
+    """
     def __init__(self, predicted_class, gini, data_idx=None):
         self.predicted_class = predicted_class
         self.gini = gini

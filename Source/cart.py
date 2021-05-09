@@ -14,6 +14,10 @@ np.random.seed(42)
 
 class CART():
     """ CART tree classifier.
+    
+    Args:
+        max_depth (int): max depth of the tree
+        F (int): number of random features used to split a node
     """
     def __init__(self, max_depth=None, F=None, verbose=0):
         if max_depth:
@@ -58,11 +62,6 @@ class CART():
         pred = [self._predict(row) for i, row in x.iterrows()] 
         
         return pred
-           
-    def get_depth(self):
-        # TODO: implement
-        # look at predict and travel tree until end found
-        return 0
     
     def _gini_index(self, data_idx, class_counts):
         """ Calculate the Gini index of a set of instances.
@@ -244,10 +243,14 @@ class CART():
 
         # Node class counts
         class_counts = self.y.loc[data_idx].value_counts()
-        
+                
         # Create node
         node = tree.Node(predicted_class=predicted_class, gini=self._gini_index(data_idx, class_counts))        
         
+        # TODO: return if node contains only one class
+        if len(class_counts) == 1:
+            return node
+
         # Split recursively until no more examples to cover or max_depth is reached
         if depth < self.max_depth:
             best_gini, best_feature, best_sp, split = self._find_best_split(data_idx)
@@ -299,22 +302,3 @@ class CART():
 
                 
         return node.predicted_class
-    
-    
-    
-# TODO: remove    
-if __name__ == '__main__':
-    import sys
-    import os
-    sys.path.append(os.path.abspath(r'..'))
-    from Data import datasets
-
-    x, y = datasets.load_mammographic_mass()
-
-
-    def test_categorical_splits(values):
-        splits = []
-        for i in range(1, len(values)//2 + 1):
-            splits.extend([[set(c), set(values)-set(c)] for c in combinations(values, i)])
-
-        return splits

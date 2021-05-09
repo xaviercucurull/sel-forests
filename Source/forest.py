@@ -22,6 +22,10 @@ class DecisionForest():
     which is the same for all the node splits.
     
     Each training set for each tree is the same original training set
+    
+    Args:
+        NT (int): number of trees used to construct the forest
+        F (int): number of random features used to split a node
     """
     def __init__(self, NT=20, F=2, verbose=0):
         self.n_trees = NT
@@ -108,6 +112,10 @@ class RandomForest():
     and the training set for each tree is sampled (bootstrapping) from the original dataset.
     
     Each training set for each tree is a bootstrapped sampling of the original training set.
+    
+    Args:
+        NT (int): number of trees used to construct the forest
+        F (int): number of random features used to split a node
     """
     def __init__(self, NT=5, F=3, verbose=0):
         self.n_trees = NT
@@ -173,24 +181,3 @@ class RandomForest():
         pred = [Counter(p).most_common(1)[0][0] for p in pred_list.T]
 
         return pred
-    
-    
-    
-        
-# TODO: remove    
-if __name__ == '__main__':
-    import sys
-    import os
-    sys.path.append(os.path.abspath(r'..'))
-    from Data import datasets
-
-    x, y = datasets.load_mammographic_mass()
-    
-    RF = RandomForest(10, 3)
-    RF.fit(x, y)
-    rf_preds = RF.predict(x)
-    
-    DF = DecisionForest(10, int(len(x.columns)/2))
-    DF.fit(x, y)
-    df_preds = DF.predict(x)
-    
