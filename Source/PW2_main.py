@@ -54,6 +54,7 @@ def test_large():
     print('###########################################################\n')
     x, y = datasets.load_rice()
     cart_acc = test_CART(x, y)
+    results_rf, results_df = None, None
     results_rf = test_random_forest(x, y)
     results_df = test_decision_forest(x, y)
     return results_rf, results_df, cart_acc
@@ -121,7 +122,7 @@ def test_forest(x, y, NT_values, F_values, forest_classifier):
             accuracies.append(acc)
             fit_times.append(fit_t)
             pred_times.append(pred_t)
-            importances.append(model.feature_importances)
+            importances.append(model.feature_importances.to_dict())
             
             # Print results
             print('NT={}  F={}  -> Accuracy: {:.2f}%'.format(nt, f, acc*100))
@@ -147,7 +148,10 @@ def test_random_forest(x, y):
     # Hyperparameters to test
     NT_values = [1, 10, 25, 50, 75, 100]
     F_values = [1, 3, int(math.log2(M) + 1), int(math.sqrt(M))]
+    # Remove duplicates
+    F_values = set(F_values)
     
+    # Evaluate model with all hyperparameter combinations
     results_table = test_forest(x, y, NT_values, F_values, RandomForest)
     
     return results_table
@@ -165,7 +169,10 @@ def test_decision_forest(x, y):
     # Hyperparameters to test
     NT_values = [1, 10, 25, 50, 75, 100]
     F_values = [int(M/4), int(M/2), int(3*M/4), 'Runif(1/M)']
+    # Remove duplicates
+    F_values = set(F_values)
     
+    # Evaluate model with all hyperparameter combinations
     results_table = test_forest(x, y, NT_values, F_values, DecisionForest)
     
     return results_table
@@ -198,77 +205,15 @@ def evaluate_model(model, x_train, y_train, x_test, y_test, print_classificiatio
     if return_scores:
         return f1, acc, time_fit, time_predict
 
-
-import numpy as np
-import matplotlib.pyplot as plt
-def plot_feature_importance(features, importances):
-    sorted_indices = np.argsort(importances)[::-1]
-    plt.title('Feature Importance')
-    plt.bar(range(len(features)), np.array(importances)[sorted_indices], align='center')
-    plt.xticks(range(len(features)), np.array(features)[sorted_indices], rotation=90)
-    plt.tight_layout()
-    plt.show()
-
 if __name__ == '__main__':
     small_results_rf, small_results_df, small_cart_acc = test_small()
+    small_results_rf.to_csv(os.path.join('out', 'small_results_rf.csv'), sep=';')
+    small_results_df.to_csv(os.path.join('out', 'small_results_df.csv'), sep=';')
+    
     medium_results_rf, medium_results_df, medium_cart_acc = test_medium()
+    medium_results_rf.to_csv(os.path.join('out', 'medium_results_rf.csv'), sep=';')
+    medium_results_df.to_csv(os.path.join('out', 'medium_results_df.csv'), sep=';')
+    
     large_results_rf, large_results_df, large_cart_acc = test_large()
-
-    # test_medium()
-    # test_large()
-    
-    
-    small_results_rf.to_pickle('small_results_rf.pkl')
-
-
-
-####################################################################################
-
-
-# Sklearn CART
-#from sklearn import tree as sklearnTree
-#print('Evaluate Scikit-Learn CART')
-#model = sklearnTree.DecisionTreeClassifier()
-#evaluate_model(model, X_train, y_train, X_test, y_test)
-
-# from sklearn.ensemble import RandomForestClassifier
-# # Train the mode
-# forest = RandomForestClassifier()
-# x, y = datasets.load_rice()
-# X_train, X_test, y_train, y_test = train_test_split(x, y, stratify=y, test_size=0.25, random_state=42)
-# forest.fit(X_train, y_train)
-
-
-
-# # TODO: here as reference
-# # https://stackoverflow.com/a/31534542
-# df = pd.DataFrame([1,2])
-# bootstrap_size = 50
-# randlist = pandas.DataFrame(index=np.random.randint(len(df), size=bootstrap_size))
-# df.merge(randlist, left_index=True, right_index=True, how='right')
-
-# # feature subspace sampling
-# features = [0, 1, 2, 3, 4]
-# n_features = 3
-# selected_features = random.sample(features, n_features)
-
-#x, y = datasets.load_lenses()
-#evaluate_model(cart, x, y, x, y)
-
-
-# Create a random subsample from the dataset with replacement
-# def subsample(dataset, ratio=1.0):
-# 	sample = list()
-# 	n_sample = round(len(dataset) * ratio)
-# 	while len(sample) < n_sample:
-# 		index = randrange(len(dataset))
-# 		sample.append(dataset[index])
-# 	return sample
-
-
-
-# RF = RandomForest(10, 3)
-# evaluate_model(RF, X_train, y_train, X_test, y_test)
-
-# DF = DecisionForest(10, int(len(x.columns)/2))
-# evaluate_model(DF, X_train, y_train, X_test, y_test)
+    large_results_rf.to_csv(os.path.join('out', 'large_results_rf.csv'), sep=';')
+    large_results_df.to_csv(os.path.join('out', 'large_results_df.csv'), sep=';')
